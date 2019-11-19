@@ -22,7 +22,6 @@
 `include "control_unit.v"
 `include "ALU_32.v"
 `include "hazard.v"
-`include "mux.v"
 `include "Imm_gen.v"
 `include "reg_file.v"
 module CPU(reset,clk
@@ -186,7 +185,7 @@ reg_file_I #(7,32) Inst_mem(I_IF,PC_IF[6:0],reset,clk);
 assign exception_opcode=I_IF[0]&I_IF[1];
 
 
-hazard_unit HAZARD(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,MemRead_EX);
+hazard_unit HAZARD(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,rd_MEM,MemRead_EX,MemRead_MEM,Branch_ID);
 
 //IF_ID pipeline register
 

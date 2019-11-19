@@ -19,7 +19,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-module hazard_unit(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,MemRead_EX
+module hazard_unit(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,rd_MEM,MemRead_EX,MemRead_MEM,Branch_ID
     );
 output reg PCWrite;
 output reg stall_IF_ID;
@@ -33,7 +33,10 @@ output reg flush_MEM_WB;
 input [4:0] rs1_ID;
 input [4:0] rs2_ID;
 input [4:0] rd_EX;
+input [4:0] rd_MEM;
+input MemRead_MEM;
 input MemRead_EX;
+input Branch_ID;
 always @(*)
 begin
 	PCWrite<=1'b1;
@@ -45,14 +48,31 @@ begin
 	flush_ID_EX<=1'b0;
 	flush_EX_MEM<=1'b0;
 	flush_MEM_WB<=1'b0;
-	if(MemRead_EX&&((rd_EX==rs1_ID)|(rd_EX==rs2_ID)))
+	if(MemRead_EX&&((rd_EX==rs1_ID)|(rd_EX==rs2_ID)))// data hazard load
+		begin
+			stall_IF_ID<=1'b1;
+			flush_ID_EX<=1'b1;
+			PCWrite<=1'b0;
+		end
+	if(Branch_ID&&((rd_EX==rs1_ID)|(rd_EX==rs2_ID)))// data hazard load
 		begin
 			stall_IF_ID<=1'b1;
 			flush_ID_EX<=1'b1;
 			PCWrite<=1'b0;
 		end
 	
-
+	if((Branch_ID&MemRead_EX)&&((rd_EX==rs1_ID)|(rd_EX==rs2_ID)))// data hazard load
+		begin
+			stall_IF_ID<=1'b1;
+			flush_ID_EX<=1'b1;
+			PCWrite<=1'b0;
+		end
+	if((Branch_ID&MemRead_MEM)&&((rd_MEM==rs1_ID)|(rd_MEM==rs2_ID)))// data hazard load
+		begin
+			stall_IF_ID<=1'b1;
+			flush_ID_EX<=1'b1;
+			PCWrite<=1'b0;
+		end
 end
 endmodule
 

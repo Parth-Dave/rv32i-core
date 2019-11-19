@@ -26,70 +26,41 @@ module CPU_test;
 
 	// Inputs
 	reg reset;
-	reg clk;
+	reg clk=0;
 
 	// Instantiate the Unit Under Test (UUT)
-	CPU uut (
-		.reset(reset), 
-		.clk(clk)
-	);
-
 	initial begin
 		// Initialize Inputs
+		
+    	$dumpfile("CPU_test.vcd");
+	    $dumpvars(0,CPU_test);
 		reset = 0;
-		clk = 0;
+		
 
 		// Wait 100 ns for global reset to finish
 		#100;
         
 		// Add stimulus here
 		reset=1;
-		clk = 1;
+		
+		#10;
+
+
+		
 		#10;
 		
-		clk = 0;
+	
 		#10;
 		
-		clk = 1;
-		#10;
-		
-		clk = 0;
 		reset=0;
 		#10;
-		
-		clk = 1;
-		#10;
-		
-		clk = 0;
-		#10;
-		
-		clk = 1;
-		#10;
-		
-		clk = 0;
-		#10;
-		
-		clk = 1;
-		#10;
-		
-		clk = 0;
-		#10;
-		
-		clk = 1;
-		#10;
-		
-		clk = 0;
-		#10;
-		
-		clk = 1;
-		#10;
-		
-		clk = 0;
-		#10;
-		
-		clk = 1;
-		#10;
+		#100 $finish;
+
 	end
-      
+     always #5 clk = !clk; 
+	 CPU uut (
+		.reset(reset), 
+		.clk(clk)
+	);
 endmodule
 

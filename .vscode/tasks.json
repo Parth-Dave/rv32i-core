@@ -1,15 +1,18 @@
 {
-    "version": "2.0.0",  
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compile Verilog File",
+            "label": "Build Module",
             "type": "shell",
-            "command": "cd ${fileDirname} ; iverilog -o ${fileBasename}.vvp ${fileBasename} ; vvp -N ${fileBasename}.vvp"
+            "command": "iverilog -o CPU_TB CPU_test.v CPU.v & vvp -N CPU_TB"
         },
+        
         {
-            "label": "Run GTKWave",
+            "label": "Get Waveform ",
             "type": "shell",
-            "command": "cd ${fileDirname} ; gtkwave out.vcd"
+            "command": "gtkwave CPU_test.vcd"
         }
     ]
 }
