@@ -44,7 +44,7 @@ module CPU_test;
 		reset=1;
 		
 		#10;
-
+	reset=0;
 
 		
 		#10;
@@ -52,9 +52,9 @@ module CPU_test;
 	
 		#10;
 		
-		reset=0;
+	
 		#10;
-		#100 $finish;
+		#1000 $finish;
 
 	end
      always #5 clk = !clk; 

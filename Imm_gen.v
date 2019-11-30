@@ -36,13 +36,13 @@ module Imm_gen(imm,in,ImmType,SignExtendCtrl
 	
 	
 	wire [11:0] a;
-	mux8_1 #(12) m8_12(a,{in[11:8],in[30:25],in[7],in[31]},in[31:20],{in[11:7],in[31:25]},12'd0,12'd0,12'd0,12'd0,12'd0,ImmType);
+	mux8_1 #(12) m8_12(a,{in[31],in[7],in[30:25],in[11:8]},in[31:20],{in[31:25],in[11:7]},12'd0,12'd0,12'd0,12'd0,12'd0,ImmType);
 	
-	wire [31:0] b;//Btype,IType,JType
+	wire [31:0] b;//Btype,IType
 	sign_extend SE1(b,a,SignExtendCtrl);
 	
-	wire [31:0] c;//U Type
-	sign_extend #(32,20) SE2(c,{in[30:21],in[7],in[19:12],in[31]},SignExtendCtrl);
+	wire [31:0] c;//J Type
+	sign_extend #(32,20) SE2(c,{in[31],in[19:12],in[7],in[30:21]},SignExtendCtrl);
 	
 	wire [31:0] d;//sh Type
 	sign_extend #(32,5) SE3(d,in[24:20],SignExtendCtrl);

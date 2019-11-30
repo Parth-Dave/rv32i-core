@@ -74,6 +74,7 @@ wire [31:0] Op1_ID;
 wire [31:0] Op2_ID;
 wire [31:0] rs1_branch_ID;
 wire [31:0] rs2_branch_ID;
+wire [`IF_ID-1:0] to_IF_ID;
 
 //EX
 wire [31:0] ALU_EX;
@@ -109,6 +110,7 @@ wire [31:0] rs2_data_fin_EX;
 wire [3:0] ALUCtrl_EX;
 wire SigA;
 
+
 //MEM
 wire exception_mem_4byte;
 wire [`Ctrl_length-1:0] Ctrl_MEM;
@@ -132,6 +134,7 @@ wire [31:0] ReadData_MEM;
 wire [31:0] ALU_MEM;
 wire RegWrite_MEM;
 wire [4:0] rd_MEM;
+wire [`EX_MEM-1:0] to_EX_MEM;
 
 //WB
 wire [`Ctrl_length-1:0] Ctrl_WB;
@@ -174,9 +177,10 @@ wire [1:0]ForwardC;
 wire [1:0]ForwardD;
 wire [1:0]ForwardE;
 
-mux4_1 #(32) PC_in(to_PC,PC_4_IF,BrData_IF,{ALU_EX[31:1],1'b0},32'b0,{Jump_EX,Bsrc});
-register #(32) PC(PC_IF,to_PC,PCWrite,reset,clk);
 assign PC_4_IF=PC_IF+32'd4;
+mux4_1 #(32) PC_in(to_PC,PC_4_IF,BrData_IF,{ALU_EX[31:1],1'b0},{ALU_EX[31:1],1'b0},{Jump_EX,Bsrc});
+register #(32) PC(PC_IF,to_PC,PCWrite,reset,clk);
+
 
 
 reg_file_I #(7,32) Inst_mem(I_IF,PC_IF[6:0],reset,clk);
@@ -185,12 +189,12 @@ reg_file_I #(7,32) Inst_mem(I_IF,PC_IF[6:0],reset,clk);
 assign exception_opcode=I_IF[0]&I_IF[1];
 
 
-hazard_unit HAZARD(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,rd_MEM,MemRead_EX,MemRead_MEM,Branch_ID);
+hazard_unit HAZARD(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,rd_MEM,MemRead_EX,MemRead_MEM,Branch_ID,Jump_MEM);
 
 //IF_ID pipeline register
 
-
-pipeline_reg #(`IF_ID) IF_ID({PC_4_ID,PC_ID,I_ID},{PC_4_IF,PC_IF,I_IF},stall_IF_ID,reset,clk);
+mux2_1 #(`IF_ID) IF_ID_FLUSH(to_IF_ID,{PC_4_IF,PC_IF,I_IF},`NOP_IF_ID,flush_IF_ID);//|Bsrc
+pipeline_reg #(`IF_ID) IF_ID({PC_4_ID,PC_ID,I_ID},to_IF_ID,stall_IF_ID,reset,clk);
  
 //ID Stage
 
@@ -217,16 +221,16 @@ Imm_gen imm_gen(Imm_ID,imm_in,ImmType_ID,SECtrl_ID);
 
 
 
-reg_file Reg_File(rs1_data_ID,rs2_data_ID,rs1_ID,rs2_ID,rd_WB,wr_data_WB,RegWrite_ID,reset,clk);
+reg_file Reg_File(rs1_data_ID,rs2_data_ID,rs1_ID,rs2_ID,rd_WB,wr_data_WB,RegWrite_WB,reset,clk);
 
 
 mux2_1 #(32) MUX1_ID(Lctrl_op_ID,PC_ID,32'd0,LCtrl_ID);
 mux2_1 #(32) MUX2_ID(Op1_ID,rs1_data_ID,Lctrl_op_ID,ALUSrc1_ID);
-mux2_1 #(32) MUX3_ID(Op2_ID,rs2_data_ID,Imm_ID,ALUSrc1_ID);
+mux2_1 #(32) MUX3_ID(Op2_ID,rs2_data_ID,Imm_ID,ALUSrc2_ID);
 
 
 //Branch Address calulation and comparision
-assign BrData_IF=PC_ID+Imm_ID;
+assign BrData_IF=$signed(PC_ID)+$signed(Imm_ID);
 
 
 
@@ -237,7 +241,7 @@ mux4_1 #(32) BR2_MUX(rs2_branch_ID,rs2_data_ID,ALU_MEM,wr_data_WB,32'd0,ForwardE
 comparator #(32) branch_comp(comp_result_ID,rs1_branch_ID,rs2_branch_ID,funct3_ID[2:1]);
 
 mux2_1 #(1) BRANCH_SELECT(BType_ID,~comp_result_ID,comp_result_ID,I_12_ID);
-assign Bsrc=Branch_ID & BType_ID;
+    assign Bsrc=Branch_ID & BType_ID;
 
 //ID_EX Pipeline Register
 mux2_1 #(`ID_EX) ID_EX_FLUSH(to_ID_EX,{Ctrl_ID,PC_ID,PC_4_ID,Op1_ID,Op2_ID,rs2_data_ID,Imm_ID,rd_ID,rs1_ID,rs2_ID},`NOP_ID_EX,flush_ID_EX);
@@ -250,7 +254,7 @@ assign {I_30_EX,I_12_EX,funct3_EX,ALUSrc1_EX,ALUSrc2_EX,Branch_EX,ImmType_EX,Reg
 //Forwarding Unit
 
 
-forwarding_unit Forw_unit(ForwardA,ForwardB,ForwardC,ForwardD,ForwardE,rs1_EX,rs2_EX,rd_MEM,rd_WB,RegWrite_MEM,RegWrite_WB,ALUSrc1_EX,ALUSrc2_EX,MemWrite_EX,Branch_ID,rs1_ID,rs2_ID,rd_EX,RegWrite_EX);
+forwarding_unit Forw_unit(ForwardA,ForwardB,ForwardC,ForwardD,ForwardE,rs1_EX,rs2_EX,rd_MEM,rd_WB,RegWrite_MEM,RegWrite_WB,ALUSrc1_EX,ALUSrc2_EX,MemWrite_EX,Branch_ID,rs1_ID,rs2_ID);
 
 //ALU and ALU control
 
@@ -274,9 +278,9 @@ ALU_32 ALU(ALU_EX,ALU_op1,ALU_op2,ALUCtrl_EX);
 assign exception_mem_4byte=Jump_EX & ALU_EX[1];
 
 //Pipeline register EX_MEM
+mux2_1 #(`EX_MEM) EX_MEM_FLUSH(to_EX_MEM,{Ctrl_EX,PC_4_EX,ALU_EX,rs2_data_fin_EX,rd_EX},`NOP_EX_MEM,flush_EX_MEM);
 
-
-pipeline_reg #(`EX_MEM) EX_MEM({Ctrl_MEM,PC_4_MEM,ALU_MEM,rs2_data_MEM,rd_MEM},{Ctrl_EX,PC_4_EX,ALU_EX,rs2_data_fin_EX,rd_EX},1'b0,reset,clk);
+pipeline_reg #(`EX_MEM) EX_MEM({Ctrl_MEM,PC_4_MEM,ALU_MEM,rs2_data_MEM,rd_MEM},to_EX_MEM,stall_EX_MEM,reset,clk);
 
 //MEM Stage
 

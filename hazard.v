@@ -19,8 +19,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-module hazard_unit(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,rd_MEM,MemRead_EX,MemRead_MEM,Branch_ID
-    );
+module hazard_unit(PCWrite,stall_IF_ID,stall_ID_EX,stall_EX_MEM,stall_MEM_WB,flush_IF_ID,flush_ID_EX,flush_EX_MEM,flush_MEM_WB,rs1_ID,rs2_ID,rd_EX,rd_MEM,MemRead_EX,MemRead_MEM,Branch_ID,Jump_MEM
+    );// check load branch hazard
 output reg PCWrite;
 output reg stall_IF_ID;
 output reg stall_ID_EX;
@@ -37,7 +37,8 @@ input [4:0] rd_MEM;
 input MemRead_MEM;
 input MemRead_EX;
 input Branch_ID;
-always @(*)
+input Jump_MEM;
+always @(rs1_ID or rs2_ID or rd_EX or rd_MEM or MemRead_MEM or MemRead_EX or Branch_ID or Jump_MEM)//change from *
 begin
 	PCWrite<=1'b1;
 	stall_IF_ID<=1'b0;
@@ -73,10 +74,16 @@ begin
 			flush_ID_EX<=1'b1;
 			PCWrite<=1'b0;
 		end
+	if(Jump_MEM)
+	begin
+		//flush_IF_ID<=1'b1;
+		flush_ID_EX<=1'b1;
+		flush_EX_MEM<=1'b1;
+	end
 end
 endmodule
 
-module forwarding_unit(Forward1,Forward2,Forward3,Forward4,Forward5,rs1_EX,rs2_EX,rd_MEM,rd_WB,RW_MEM,RW_WB,ALUSrc1,ALUSrc2,MemWrite,branch_ID,rs1_ID,rs2_ID,rd_EX,RW_EX
+module forwarding_unit(Forward1,Forward2,Forward3,Forward4,Forward5,rs1_EX,rs2_EX,rd_MEM,rd_WB,RW_MEM,RW_WB,ALUSrc1,ALUSrc2,MemWrite,branch_ID,rs1_ID,rs2_ID
     );
  output reg [1:0] Forward1;//for OP1
  output reg [1:0] Forward2;//for OP2
@@ -95,10 +102,9 @@ module forwarding_unit(Forward1,Forward2,Forward3,Forward4,Forward5,rs1_EX,rs2_E
  input branch_ID;
  input [4:0] rs1_ID;
  input [4:0] rs2_ID;
- input [4:0] rd_EX;
- input RW_EX;
+ 
 
- always @(*)
+ always @(rs1_EX or rs2_EX or rd_MEM or rd_WB or RW_MEM or RW_WB or ALUSrc1 or ALUSrc2 or MemWrite )//change from *
  begin
 	if(MemWrite)                           //IF in MEM and RegWRITE MEM then take from MEM else From WB else don't
 	begin												//Might have issues with Load instruction
@@ -130,7 +136,7 @@ module forwarding_unit(Forward1,Forward2,Forward3,Forward4,Forward5,rs1_EX,rs2_E
 	end
  end
 
- always @(*)// 00 regfile| 01 MEM| 10 WB| 11 EX
+ always @(rd_MEM or rd_WB or RW_MEM or RW_WB or branch_ID or rs1_ID or rs2_ID )// 00 regfile| 01 MEM| 10 WB change from *
  begin
 	 if(branch_ID)
 	 begin

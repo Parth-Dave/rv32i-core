@@ -24,7 +24,7 @@ module reg_file(Out1,Out2,Ad1,Ad2,WrAd,WrData,Wr,reset,clk
 	parameter n=5;
 	parameter l=32;
 	localparam N = 1 << n;
-	output reg [l-1:0] Out1;
+	output reg [l-1:0] Out1;//make using d flipflops
 	output reg [l-1:0] Out2;
 	input [n-1:0] Ad1;
 	input [n-1:0] Ad2;
@@ -33,22 +33,30 @@ module reg_file(Out1,Out2,Ad1,Ad2,WrAd,WrData,Wr,reset,clk
 	input Wr;
 	input reset;
 	input clk;
-	reg [l-1:0]mem[N-1:0];
+	reg [l-1:0]mem[N-1:0];//don't use mem variable name for reg_file
 	integer i;
 	
-	always @(posedge clk)
+	always @(clk or Ad1 or Ad2)// change to level and negedge for write
 	begin
-	if(reset)
-		for(i=0;i<N;i=i+1)
-			mem[i]<=0;
-	else
-		if(Wr)
+		if(clk)
 		begin
-			mem[WrAd]<=WrData;
-			mem[0]<=32'd0;
+			Out1<=32'd0;
+			Out2<=32'd0;
+			if(reset)//avoid for loop
+				for(i=0;i<N;i=i+1)
+					mem[i]<=0;
+			else	
+				Out1<=mem[Ad1];
+				Out2<=mem[Ad2];
 		end
-		Out1<=mem[Ad1];
-		Out2<=mem[Ad2];
+	end
+	always@(negedge clk)
+	begin
+		if(Wr)
+			begin
+				mem[WrAd]<=WrData;
+				mem[0]<=32'd0;
+			end
 	end
 endmodule
 
@@ -67,6 +75,8 @@ module reg_file_D(Out,Ad,Data,r,w,reset,clk);
 	reg [l-1:0] mem [N-1:0];
 	integer i;
 	always @ (posedge clk)
+	begin
+		Out<=0;	
 		if(reset)
 			begin
 				for(i=0;i<N;i=i+1)
@@ -74,11 +84,17 @@ module reg_file_D(Out,Ad,Data,r,w,reset,clk);
 			end
 		else
 		begin
-			if(w)
-				mem[Ad]<=Data;
 			if(r)
 				Out<=mem[Ad];
 		end
+	end
+	always@(negedge clk)
+	begin
+		if(w)
+			begin
+				mem[Ad]<=Data;
+			end
+	end
 endmodule
 
 module reg_file_I(Out,Ad,reset,clk);
@@ -88,15 +104,50 @@ module reg_file_I(Out,Ad,reset,clk);
 	localparam N = 1 << n;
 	output reg [l-1:0] Out;
 	input [n-1:0] Ad;
-	input reset;
+	input reset; 
 	input clk;
 	reg [l/4-1:0] mem [N-1:0];
 	integer i;
-	always @(posedge clk)
+	always @(reset)
 	begin
+	Out<=32'd0;
 	if(reset)
 	begin
-		for(i=0;i<N;i=i+4)
+		mem[0]<=8'h93;//ADD R1 R0 R0
+		mem[1]<=8'h85;
+		mem[2]<=8'h55;
+		mem[3]<=8'h00;
+		
+		mem[4]<=8'h13;//ADDI R2 R0 10
+		mem[5]<=8'h06;
+		mem[6]<=8'h06;
+		mem[7]<=8'h00;
+		
+		mem[8]<=8'h03;//ADDI R1 R1 1
+		mem[9]<=8'h25;
+		mem[10]<=8'h46;
+		mem[11]<=8'h00;
+
+		mem[12]<=8'h63;//ADD R3 R1 R3 ‭B50663‬
+		mem[13]<=8'h06;
+		mem[14]<=8'hB5;
+		mem[15]<=8'h00;
+
+		mem[16]<=8'h13;//BNE R1 R2 -12 ‭150513‬
+		mem[17]<=8'h05;
+		mem[18]<=8'h15;
+		mem[19]<=8'h00;
+		
+		mem[20]<=8'hEF;//JAl R4 R0 20 ‭FF9FF0EF‬
+		mem[21]<=8'hF0;
+		mem[22]<=8'h9F;
+		mem[23]<=8'hFF;
+		
+		mem[24]<=8'h13;//ADDI R4 R0 20 ‭A50513‬
+		mem[25]<=8'h05;
+		mem[26]<=8'hA5;
+		mem[27]<=8'h00;
+		for(i=28;i<N;i=i+4)
 		begin
 				mem[i]<=8'h13;
 				mem[i+1]<=8'd0;
@@ -104,9 +155,14 @@ module reg_file_I(Out,Ad,reset,clk);
 				mem[i+3]<=8'd0;
 		end
 	end
-	else
+end
+always @(clk)
+begin
+	if(!reset)
+	begin
 		Out<={mem[Ad+3],mem[Ad+2],mem[Ad+1],mem[Ad]};
 	end
+end
 endmodule
 
 module register(Out,in,en,reset,clk);
@@ -120,14 +176,17 @@ input clk;
 
 always @ (posedge clk )
 	begin
-		if(reset)
-			Out<=0;
-		else if(!en)
-			Out<=Out;
-		else
-			Out<=in;
+		
+		
+			Out<=32'd0;
+			if(reset)
+				Out<=0;
+			else if(!en)
+				Out<=Out;
+			else
+				Out<=in;
+		
 	end
-	
 endmodule
 
 module pipeline_reg(Out,in,stall,reset,clk);// doesn't change value if stall, use mux at input for flush with nop
@@ -138,7 +197,8 @@ module pipeline_reg(Out,in,stall,reset,clk);// doesn't change value if stall, us
 	input clk;
 	input reset;
 	always @( posedge clk)
-		begin
+		begin	
+			Out<=0;
 			if(reset)
 				Out<=0;
 			else if(stall)

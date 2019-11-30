@@ -25,8 +25,9 @@ module ALU_32(Out,Op1,Op2,ALUCtrl);
 	input [3:0] ALUCtrl;
 	
 	//confirm sign / unsigned
-	always @(*)
+	always @(Op1 or Op2 or ALUCtrl)//don't use *
 		begin
+			Out<=32'd0;
 			case(ALUCtrl)
 			4'b0000://ADD
 			Out<=$signed(Op1)+$signed(Op2);
@@ -70,17 +71,18 @@ module ALU_control(ALUCtrl,func3,I,SigA,isItype,Branch);
 endmodule
 
 module comparator(Out,in1,in2,type);
-	parameter n=32;
+	parameter n=32;//change parameter to x'dn format
 	output reg Out;
 	input [n-1:0]in1;
 	input [n-1:0]in2;
 	input [1:0]type;
 
-	always @(*)
+	always @(type or in1 or in2)
 	begin
+		Out<=1;
 		case(type)
 		2'b00:
-		Out<=(in1==in2);
+		Out<=~(in1==in2);
 		2'b10:
 		Out<=($signed(in1)<$signed(in2))?1'd0:1'd1;
 		2'b11:

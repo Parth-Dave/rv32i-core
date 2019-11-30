@@ -49,6 +49,19 @@ module control_unit(Ctrl,in
 		
 	always @(*)
 	begin
+		ALUSrc1<=1'b0;
+		ALUSrc2<=1'b0;
+		Branch<=1'b0;
+		ImmType<=`I_Type;
+		RegWrite<=1'b0;
+		MemtoReg<=1'b0;
+		MemRead<=1'b0;
+		MemWrite<=1'b0;
+		SignExtendCtrl<=1'b1;
+		Jump<=1'b0;
+		Lctrl<=1'b0;
+		isItype<=1'b0;
+		I_12 <= in[5];
 		case (opcode)
 			`BRANCH_OP :
 				begin
