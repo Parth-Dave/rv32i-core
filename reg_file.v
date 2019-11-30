@@ -113,37 +113,46 @@ module reg_file_I(Out,Ad,reset,clk);
 	Out<=32'd0;
 	if(reset)
 	begin
-		mem[0]<=8'h93;//ADD R1 R0 R0
+	/*
+	addi x11 x11 5
+	addi x12 x12 0
+	lw x10 4(x12)
+	beq x10 x11 12
+	addi x10 x10 1
+	jal x1 12
+	addi x10 x10 10
+	*/
+		mem[0]<=8'h93;//addi x11 x11 5
 		mem[1]<=8'h85;
 		mem[2]<=8'h55;
 		mem[3]<=8'h00;
 		
-		mem[4]<=8'h13;//ADDI R2 R0 10
+		mem[4]<=8'h13;//addi x12 x12 0
 		mem[5]<=8'h06;
 		mem[6]<=8'h06;
 		mem[7]<=8'h00;
 		
-		mem[8]<=8'h03;//ADDI R1 R1 1
+		mem[8]<=8'h03;//lw x10 4(x12)
 		mem[9]<=8'h25;
 		mem[10]<=8'h46;
 		mem[11]<=8'h00;
 
-		mem[12]<=8'h63;//ADD R3 R1 R3 ‭B50663‬
+		mem[12]<=8'h63;‬//beq x10 x11 12
 		mem[13]<=8'h06;
 		mem[14]<=8'hB5;
 		mem[15]<=8'h00;
 
-		mem[16]<=8'h13;//BNE R1 R2 -12 ‭150513‬
+		mem[16]<=8'h13;‬//addi x10 x10 1
 		mem[17]<=8'h05;
 		mem[18]<=8'h15;
 		mem[19]<=8'h00;
 		
-		mem[20]<=8'hEF;//JAl R4 R0 20 ‭FF9FF0EF‬
+		mem[20]<=8'hEF;‬//jal x1 -8
 		mem[21]<=8'hF0;
 		mem[22]<=8'h9F;
 		mem[23]<=8'hFF;
 		
-		mem[24]<=8'h13;//ADDI R4 R0 20 ‭A50513‬
+		mem[24]<=8'h13;//addi x10 x10 10
 		mem[25]<=8'h05;
 		mem[26]<=8'hA5;
 		mem[27]<=8'h00;
