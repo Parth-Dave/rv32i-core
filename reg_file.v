@@ -185,8 +185,6 @@ input clk;
 
 always @ (posedge clk )
 	begin
-		
-		
 			Out<=32'd0;
 			if(reset)
 				Out<=0;
